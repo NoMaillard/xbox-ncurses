@@ -12,7 +12,7 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 CFLAGS := -g # -Wall
-LIB := -lusb-1.0
+LIB := -lusb-1.0 -lpthread
 TEST_LIB := -lgtest -lgtest_main -lpthread
 INC := -I include
 

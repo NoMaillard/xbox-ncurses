@@ -2,13 +2,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
+#include <unistd.h>
 
 static bool volatile exitProgram = false;
 
 int product_id, vendor_id, class_id;
 
 void exitHandler(int dummy) {
-  exitProgram = true;
+    exitProgram = true;
+}
+
+void *usb_thread(void *arg) {
+    libusb_context *context = (libusb_context *) arg;
+    int rc;
+    while (!exitProgram) {
+        rc = libusb_handle_events_completed(context, NULL);
+        if (LIBUSB_SUCCESS != rc) {
+            fprintf(stderr, "Error handling event: %s\n", libusb_error_name(rc));
+            break;
+        }
+    }
 }
 
 void write_callback(struct libusb_transfer *transfer) {
@@ -43,47 +57,52 @@ void read_cb(struct libusb_transfer *transfer) {
     }
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 
-  libusb_context * context = NULL;
-  controllers = (struct controller *)calloc(sizeof(struct controller), NUMBER_OF_DEVICES);
-  signal(SIGINT, exitHandler);
-  int rc = libusb_init(&context);
-  if (LIBUSB_SUCCESS != rc) {
-    fprintf (stderr, "Error initializing : %s\n", libusb_error_name(rc));
-    return EXIT_FAILURE;
-  }
-
-
-  vendor_id  = (argc > 1) ? (int)strtol (argv[1], NULL, 0) : 0x045e;
-  product_id = (argc > 2) ? (int)strtol (argv[2], NULL, 0) : 0x028e;
-  class_id   = (argc > 3) ? (int)strtol (argv[3], NULL, 0) : LIBUSB_HOTPLUG_MATCH_ANY;
-  rc = usb_init(vendor_id, product_id, class_id, context, &read_cb);
-
-  while (!exitProgram) {
-    rc = libusb_handle_events_completed(context, NULL);
+    libusb_context *context = NULL;
+    controllers = (struct controller *) calloc(sizeof(struct controller), NUMBER_OF_DEVICES);
+    signal(SIGINT, exitHandler);
+    int rc = libusb_init(&context);
     if (LIBUSB_SUCCESS != rc) {
-      fprintf (stderr, "Error handling event: %s\n", libusb_error_name(rc));
-      break;
+        fprintf(stderr, "Error initializing : %s\n", libusb_error_name(rc));
+        return EXIT_FAILURE;
     }
-  }
-  // close everything
-  int controller_it;
-  struct controller * controller = controllers;
-  for (controller_it = 0; controller_it < NUMBER_OF_DEVICES; controller_it++) {
-    if (!controller->device) {
-      controller++;
-      continue;
+
+
+    vendor_id = (argc > 1) ? (int) strtol(argv[1], NULL, 0) : 0x045e;
+    product_id = (argc > 2) ? (int) strtol(argv[2], NULL, 0) : 0x028e;
+    class_id = (argc > 3) ? (int) strtol(argv[3], NULL, 0) : LIBUSB_HOTPLUG_MATCH_ANY;
+    rc = usb_init(vendor_id, product_id, class_id, context, &read_cb);
+    if (LIBUSB_SUCCESS != rc) {
+        fprintf(stderr, "Error init: %s\n", libusb_error_name(rc));
     }
-    close_device(controller->device);
-    controller++;
-  }
 
-  printf("exiting usb...\n");
-  libusb_exit(context);
-  printf("exited usb...\n");
+    pthread_t usb_pid = NULL;
+    rc = pthread_create(&usb_pid, NULL, &usb_thread, context);
+
+    while (!exitProgram) {
+        printf("THREADED\n");
+        sleep(1);
+    }
+
+    pthread_join(usb_pid, NULL);
+
+    // close everything
+    int controller_it;
+    struct controller *controller = controllers;
+    for (controller_it = 0; controller_it < NUMBER_OF_DEVICES; controller_it++) {
+        if (!controller->device) {
+            controller++;
+            continue;
+        }
+        close_device(controller->device);
+        controller++;
+    }
+
+    printf("exiting usb...\n");
+    libusb_exit(context);
+    printf("exited usb...\n");
 
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
