@@ -1,5 +1,5 @@
 CC := gcc
-ARMCC := arm-linux-gcc -std=c99
+ARMCC := arm-linux-gcc -std=c11
 SRCEXT := c
 
 SRCDIR := src
@@ -12,15 +12,19 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 CFLAGS := -g # -Wall
-LIB := -lusb-1.0 -lpthread
+LIB := -lusb-1.0 -lpthread -lncurses
 TEST_LIB := -lgtest -lgtest_main -lpthread
 INC := -I include
 
 
 all: $(TARGET)
 
+run: TERM = linux
 run: $(TARGET)
 	@./$(TARGET)
+
+target: CC = $(ARMCC)
+target: clean all
 
 $(TARGET): $(OBJECTS)
 	@echo " Linking..."

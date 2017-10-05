@@ -8,6 +8,6 @@ set(SOURCE_FILES
         src/controller.h
         src/usb_handler.c
         src/usb_handler.h
-        src/xb.c)
+        src/xb.c src/controller_display.c src/controller_display.h)
 
 add_executable(D ${SOURCE_FILES})

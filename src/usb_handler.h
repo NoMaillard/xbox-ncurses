@@ -10,8 +10,10 @@
 
 struct controller *controllers;
 
+int connnectedControllers;
 
-int usb_init(int vendor_id, int product_id, int class_id, libusb_context *context, void (*read)(struct libusb_transfer *));
+int
+usb_init(int vendor_id, int product_id, int class_id, libusb_context *context, void (*read)(struct libusb_transfer *));
 
 int close_device(libusb_device *dev);
 
@@ -21,9 +23,11 @@ int start_read_device(struct libusb_transfer *transfer,
                       libusb_device_handle *handle,
                       unsigned char *data,
                       int length,
-                      libusb_transfer_cb_fn callback);
+                      libusb_transfer_cb_fn callback,
+                      struct controller *controller
+);
 
-int write_device(libusb_device_handle *handle,
+int write_device(struct controller *controller,
                  unsigned char *data,
                  int length,
                  libusb_transfer_cb_fn callback);

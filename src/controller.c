@@ -4,12 +4,12 @@
 
 char *buttons[] = {
         // 0
-        "L_PAD",
         "R_PAD",
+        "L_PAD",
         "BACK",
         "START",
-        "LEFT",
         "RIGHT",
+        "LEFT",
         "DOWN",
         "UP",
         // 1
@@ -19,8 +19,8 @@ char *buttons[] = {
         "A",
         "NOTHING",
         "XBOX",
-        "L_BTN",
-        "R_BTN"
+        "R_BTN",
+        "L_BTN"
 };
 
 char *analog8[] = {
@@ -36,29 +36,38 @@ char *analog16[] = {
         "RIGHT_Y"
 };
 
+int getButtonState(struct controller *controller, char *button) {
+    for (int i = 0; i < 16; ++i) {
+        if (!strcmp(button, buttons[i])) {
+            return (controller->button_report[i / 8] >> (i % 8)) & 1;
+        }
+    }
 
-void input_report(unsigned char *buffer) {
+    return -1;
+}
+
+void input_report(unsigned char *buffer, struct controller * controller) {
     // buttons
     for (int i = 0; i < 16; i++) {
         if ((buffer[2 + (i / 8)] >> (7 - (i % 8))) & 0x1) {
-            printf("%s ", buttons[i]);
-            button_report[i / 8] = (char) ((0x1 << i % 8) | button_report[i / 8]);
+//            printf("%s ", buttons[i]);
+            controller->button_report[i / 8] = (char) ((0x1 << i % 8) | controller->button_report[i / 8]);
         } else {
-            printf("%*c ", (int) strlen(buttons[i]), ' ');
-            button_report[i / 8] = (char) (~(0x1 << i % 8) & button_report[i / 8]);
+//            printf("%*c ", (int) strlen(buttons[i]), ' ');
+            controller->button_report[i / 8] = (char) (~(0x1 << i % 8) & controller->button_report[i / 8]);
         }
     }
 
     // triggers
     for (size_t i = 0; i < 2; i++) {
-        printf("%s : %3d ", analog8[i], buffer[i + 4]);
-        analog8_report[i] = buffer[i + 4];
+//        printf("%s : %3d ", analog8[i], buffer[i + 4]);
+        controller->analog8_report[i] = buffer[i + 4];
     }
 
     // pads
     for (size_t i = 0; i < 8; i += 2) {
-        int16_t analog = (int16_t) ((buffer[i + 7] << 8) | (buffer[i + 6] & 0xFF));
-        analog16_report[i / 2] = analog;
-        printf("%s : %7d ", analog16[i / 2], analog);
+        int16_t analog = (int16_t) ((buffer[i + 7] << 8) | (buffer[i + 6]));
+        controller->analog16_report[i / 2] = analog;
+//        printf("%s : %7d ", analog16[i / 2], analog);
     }
 }
