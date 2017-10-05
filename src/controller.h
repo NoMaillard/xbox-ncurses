@@ -1,7 +1,6 @@
 
 #include <libusb-1.0/libusb.h>
 #include <stdbool.h>
-#include <bits/types/wint_t.h>
 #include <curses.h>
 
 #ifndef CONTROLLER_H

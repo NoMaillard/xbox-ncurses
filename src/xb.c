@@ -1,11 +1,9 @@
 #include "usb_handler.h"
 #include "controller_display.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <pthread.h>
 #include <unistd.h>
-#include <ncurses.h>
+#include <pthread.h>
 
 static bool volatile exitProgram = false;
 
@@ -64,7 +62,6 @@ void read_cb(struct libusb_transfer *transfer) {
     }
 
     //read again
-    usleep(40000);
     rc = libusb_submit_transfer(transfer);
     if (LIBUSB_SUCCESS != rc) {
         fprintf(stderr, "Error retransferring : %s\n", libusb_error_name(rc));
@@ -80,7 +77,8 @@ void *usb_thread(void *arg) {
     }
     pthread_cond_broadcast(&usb_init_cond);
 
-    while (1) {
+    while (!exitProgram) {
+        usleep(40000);
         rc = libusb_handle_events_completed(context, NULL);
         if (LIBUSB_SUCCESS != rc) {
             fprintf(stderr, "Error handling event: %s\n", libusb_error_name(rc));
@@ -203,9 +201,8 @@ int main(int argc, char *argv[]) {
             wrefresh(controller->window);
             controller++;
         }
-
-        refresh();
         usleep(70000);
+        refresh();
     }
     endwin();
     pthread_kill(usb_pid, SIGINT);

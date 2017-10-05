@@ -13,7 +13,6 @@ OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 CFLAGS := -g # -Wall
 LIB := -lusb-1.0 -lpthread -lncurses
-TEST_LIB := -lgtest -lgtest_main -lpthread
 INC := -I include
 
 
